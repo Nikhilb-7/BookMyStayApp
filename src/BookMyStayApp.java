@@ -1,37 +1,49 @@
 import java.util.*;
 /**
- * MAIN CLASS UseCase9ErrorHandlingValidation
- * Use Case 9: Error Handling & Validation
- * @version 9.1
+ * MAIN CLASS UseCase10BookingCancellation
+ * Use Case 10: Booking Cancellation & Inventory Rollback
+ * @version 10.1
  */
-class InvalidBookingException extends Exception {
-    public InvalidBookingException(String message) {
-        super(message);
+class RoomInventory {
+    private Map<String, Integer> inventory;
+    public RoomInventory() {
+        inventory = new HashMap<>();
+        inventory.put("Single", 5);
+        inventory.put("Double", 2);
+        inventory.put("Suite", 1);
+    }
+    public void increaseAvailability(String roomType) {
+        inventory.put(roomType, inventory.get(roomType) + 1);
+    }
+    public int getAvailability(String roomType) {
+        return inventory.get(roomType);
     }
 }
-class BookingValidator {
-    private static final Set<String> VALID_ROOMS =
-            new HashSet<>(Arrays.asList("Single", "Double", "Suite"));
-    public static void validateRoomType(String roomType) throws InvalidBookingException {
-        if (!VALID_ROOMS.contains(roomType)) {
-            throw new InvalidBookingException("Invalid room type selected.");
+class CancellationService {
+    private Stack<String> rollbackStack;
+    public CancellationService() {
+        rollbackStack = new Stack<>();
+    }
+    public void cancelBooking(String reservationId, String roomType, RoomInventory inventory) {
+        rollbackStack.push(reservationId);
+        inventory.increaseAvailability(roomType);
+        System.out.println("Booking cancelled successfully. Inventory restored for room type: " + roomType);
+    }
+    public void displayRollbackHistory() {
+        System.out.println("\nRollback History (Most Recent First):");
+        while (!rollbackStack.isEmpty()) {
+            System.out.println("Released Reservation ID: " + rollbackStack.pop());
         }
     }
 }
 public class BookMyStayApp {
     public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        try {
-            System.out.println("Booking Validation");
-            System.out.print("Enter guest name: ");
-            String guestName = sc.nextLine();
-            System.out.print("Enter room type (Single/Double/Suite): ");
-            String roomType = sc.nextLine();
-            BookingValidator.validateRoomType(roomType);
-            System.out.println("Booking confirmed for " + guestName + " with room type " + roomType);
-        } catch (InvalidBookingException e) {
-            System.out.println("Booking failed: " + e.getMessage());
-        }
-        sc.close();
+        System.out.println("Booking Cancellation");
+        RoomInventory inventory = new RoomInventory();
+        CancellationService service = new CancellationService();
+        service.cancelBooking("Single-1", "Single", inventory);
+        service.displayRollbackHistory();
+        System.out.println("\nUpdated Single Room Availability: "
+                + inventory.getAvailability("Single"));
     }
 }
